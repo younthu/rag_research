@@ -6,6 +6,22 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "datasets>=4.4.0",
+    "elasticsearch>=9.2.0",
+    "pandas>=2.3.3",
     "requests>=2.32.5",
     "tqdm>=4.67.1",
 ]
+
+[project.scripts]
+# Installable console scripts that point to the two helper scripts in `scripts/`.
+# After `pip install .` you can run `parse-toutiao` and `ingest-to-es`.
+parse-toutiao = "scripts.parse_toutiao:main"
+ingest-to-es = "scripts.ingest_to_es:main"
+
+# mirrors
+[tool.uv] # for uv sync, https://github.com/astral-sh/uv/issues/6925#issuecomment-2324110095
+index-url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple"
+[pip]
+index-url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple"
+[tool.uv.pip]
+index-url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple"
