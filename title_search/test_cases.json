@@ -15,6 +15,13 @@
       "comment": "测试部分匹配和特殊字符忽略，方括号和&符号不应影响匹配"
     },
     {
+      "id": "case_002",
+      "query": "[rag]",
+      "target": "[RAG] Query Cases&Evaluation",
+      "target_rank": 1,
+      "comment": "测试部分匹配和特殊字符忽略，方括号和&符号不应影响匹配"
+    },
+    {
       "id": "case_003",
       "query": "圣诞通知",
       "target": "XCompany 2025 圣诞放假通知",
