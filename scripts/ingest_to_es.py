@@ -2,7 +2,7 @@
 """
 ingest_to_es.py
 
-python3 scripts/ingest_to_es.py -i downloads/toutiao_cat_data.txt --index toutiao_news --es-host http://localhost:9200 --batch 500
+python3 scripts/ingest_to_es.py -i downloads/toutiao_cat_data.txt --index toutiao_news --mapping scripts/es_mapping.json --force-reindex  --es-host http://localhost:9200 --batch 500
 
 python3 scripts/ingest_to_es.py -i downloads/toutiao_cat_data.txt --index dummy --csv downloads/toutiao_cat_data.csv --limit 1000
 
@@ -28,7 +28,9 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import sys
+from pathlib import Path
 from typing import Dict, Iterable
 
 try:
@@ -82,23 +84,42 @@ def read_records(path: str, sep: str = SEP_DEFAULT, limit: int = 0) -> Iterable[
             count += 1
 
 
-def ensure_index(es: Elasticsearch, index: str):
+def ensure_index(es: Elasticsearch, index: str, mapping_path: str | None = None):
     if es.indices.exists(index=index):
         print(f"Index '{index}' already exists")
         return
-    mapping = {
-        'mappings': {
-            'properties': {
-                'id': {'type': 'keyword'},
-                'category_id': {'type': 'integer'},
-                'label': {'type': 'keyword'},
-                'title': {'type': 'text', 'analyzer': 'standard'},
-                'keywords': {'type': 'keyword'},
+
+    mapping = None
+    if mapping_path:
+        # Resolve mapping path relative to this script if not absolute
+        mp = Path(mapping_path)
+        if not mp.is_absolute():
+            mp = Path(__file__).resolve().parent / mapping_path
+        if mp.exists():
+            try:
+                with open(mp, 'r', encoding='utf-8') as f:
+                    mapping = json.load(f)
+                    print(f"Loaded mapping from {mp}")
+            except Exception as e:
+                print(f"Failed to load mapping file {mp}: {e}", file=sys.stderr)
+
+    if mapping is None:
+        # fallback mapping (same as prior default)
+        mapping = {
+            'mappings': {
+                'properties': {
+                    'id': {'type': 'keyword'},
+                    'category_id': {'type': 'integer'},
+                    'label': {'type': 'keyword'},
+                    'title': {'type': 'text', 'analyzer': 'standard'},
+                    'keywords': {'type': 'keyword'},
+                }
             }
         }
-    }
+        print("Using built-in fallback mapping")
+
     es.indices.create(index=index, body=mapping)
-    print(f"Created index '{index}' with basic mapping")
+    print(f"Created index '{index}' with mapping")
 
 
 def docs_to_actions(docs: Iterable[Dict], index: str):
@@ -139,6 +160,8 @@ def main():
     parser.add_argument('--csv', help='Optional: write parsed CSV to this path')
     parser.add_argument('--batch', type=int, default=500, help='Bulk batch size')
     parser.add_argument('--limit', type=int, default=0, help='Optional: limit number of lines to ingest (0 = all)')
+    parser.add_argument('--mapping', help='Optional path to mapping JSON file to use when creating the index')
+    parser.add_argument('--force-reindex', action='store_true', help='If set, delete the index first before creating and indexing')
     args = parser.parse_args()
 
     es = Elasticsearch([args.es_host])
@@ -151,7 +174,19 @@ def main():
         print(f"Error connecting to Elasticsearch: {e}", file=sys.stderr)
         sys.exit(3)
 
-    ensure_index(es, args.index)
+    # handle force reindex option
+    if args.force_reindex:
+        try:
+            if es.indices.exists(index=args.index):
+                print(f"force-reindex: deleting existing index '{args.index}'")
+                es.indices.delete(index=args.index)
+            else:
+                print(f"force-reindex: index '{args.index}' does not exist, will create new one")
+        except Exception as e:
+            print(f"Error deleting index {args.index}: {e}", file=sys.stderr)
+            sys.exit(5)
+
+    ensure_index(es, args.index, mapping_path=args.mapping)
 
     # Read records generator
     records = list(read_records(args.input, sep=args.sep, limit=args.limit))

@@ -10,7 +10,7 @@ es = Elasticsearch(
     ["http://localhost:9200"],  # ES服务地址，多个节点可写列表
     # 若有账号密码，添加如下配置
     # http_auth=("username", "password"),
-    timeout=30,  # 超时时间（秒）
+    request_timeout=30,  # 超时时间（秒）
     max_retries=3,
     retry_on_timeout=True
 )
@@ -31,9 +31,9 @@ mapping = {
     "mappings": {
         "properties": {
             "query_id": {"type": "keyword"},  # 查询ID（不分词）
-            "query_text": {"type": "text", "analyzer": "ik_max_word"},  # 查询文本（中文用ik分词）
+            "query_text": {"type": "text", "analyzer": "standard"},  # 查询文本（默认 standard 分词；若安装 IK 分词器可改回 ik_max_word）
             "doc_id": {"type": "keyword"},  # 文档ID
-            "doc_text": {"type": "text", "analyzer": "ik_max_word"},  # 文档文本
+            "doc_text": {"type": "text", "analyzer": "standard"},  # 文档文本（默认 standard 分词；若安装 IK 分词器可改回 ik_max_word）
             "relevance": {"type": "integer"},  # 相关性分数（如0-4）
             "split": {"type": "keyword"}  # 数据划分（如train/test）
         }

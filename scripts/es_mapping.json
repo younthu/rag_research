@@ -1,0 +1,57 @@
+{
+  "settings": {
+    "analysis": {
+      "char_filter": {
+        "normalize_apostrophe": {
+          "type": "mapping",
+          "mappings": [
+              "\u2019=>'",
+              "\u2018=>'",
+              "\u201B=>'"
+          ]
+        }
+      },
+      "tokenizer": {
+        "ngram_tokenizer": {
+          "type": "ngram",
+          "min_gram": 1,
+          "max_gram": 2
+        }
+      },
+      "analyzer": {
+        "title_cjk_analyzer": {
+          "type": "custom",
+          "tokenizer": "icu_tokenizer",
+          "filter": ["lowercase", "icu_folding"]
+        },
+        "title_apostrophe_analyzer": {
+          "type": "custom",
+          "char_filter": ["normalize_apostrophe"],
+          "tokenizer": "uax_url_email",
+          "filter": ["lowercase", "asciifolding"]
+        },
+        "title_cjk_ngram": {
+          "type": "custom",
+          "tokenizer": "ngram_tokenizer",
+          "filter": ["lowercase"]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "id": { "type": "keyword" },
+      "category_id": { "type": "integer" },
+      "label": { "type": "keyword" },
+      "title": {
+        "type": "text",
+        "fields": {
+          "cjk": { "type": "text", "analyzer": "title_cjk_analyzer" },
+          "apostrophe": { "type": "text", "analyzer": "title_apostrophe_analyzer" },
+          "ngram": { "type": "text", "analyzer": "title_cjk_ngram" }
+        }
+      },
+      "keywords": { "type": "keyword" }
+    }
+  }
+}

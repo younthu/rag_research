@@ -1,0 +1,372 @@
+{
+  "test_cases": [
+    {
+      "id": "case_001",
+      "query": "one piece",
+      "target": "One Piece",
+      "target_rank": 1,
+      "comment": "测试大小写不敏感匹配，完全匹配应该排名第一"
+    },
+    {
+      "id": "case_002",
+      "query": "rag query",
+      "target": "[RAG] Query Cases&Evaluation",
+      "target_rank": 1,
+      "comment": "测试部分匹配和特殊字符忽略，方括号和&符号不应影响匹配"
+    },
+    {
+      "id": "case_003",
+      "query": "圣诞通知",
+      "target": "XCompany 2025 圣诞放假通知",
+      "target_rank": 1,
+      "comment": "测试中文分词和部分匹配，应该能匹配到完整标题"
+    },
+    {
+      "id": "case_004",
+      "query": "trump meeting",
+      "target": "Xi&Trump 18:26 meeting notes",
+      "target_rank": 1,
+      "comment": "测试多词匹配，特殊字符&和数字不应影响匹配结果"
+    },
+    {
+      "id": "case_005",
+      "query": "xcompany ai platform",
+      "target": "XCompany ｎｅｗ ａｉ ｐｌａｔｆｏｒｍ",
+      "target_rank": 1,
+      "comment": "测试全角字符匹配，全角英文应该能匹配半角英文"
+    },
+    {
+      "id": "case_006",
+      "query": "infrastructure india",
+      "target": "Infrastructure and Data system - India",
+      "target_rank": 1,
+      "comment": "测试跨词匹配，中间的连接词不应影响匹配"
+    },
+    {
+      "id": "case_007",
+      "query": "rag bug fix",
+      "target": "【RAG】bug fix/[RAG] bug fix",
+      "target_rank": 1,
+      "comment": "测试中英文混合、多种括号和斜杠的处理"
+    },
+    {
+      "id": "case_008",
+      "query": "luffy declaration",
+      "target": "Luffy's declaration",
+      "target_rank": 1,
+      "comment": "测试所有格匹配，撇号's不应影响匹配"
+    },
+    {
+      "id": "case_009",
+      "query": "pm hub",
+      "target": "📈 PM Execution Hub",
+      "target_rank": 1,
+      "comment": "测试emoji忽略，表情符号不应影响搜索结果"
+    },
+    {
+      "id": "case_010",
+      "query": "xcompany product",
+      "target": "XCompany's product",
+      "target_rank": 1,
+      "comment": "测试公司名称匹配和所有格处理"
+    },
+    {
+      "id": "case_011",
+      "query": "RAG",
+      "target": "[RAG] Query Cases&Evaluation",
+      "target_rank": "<=3",
+      "comment": "测试单关键词匹配，应该返回所有包含RAG的文档，Query Cases排名靠前"
+    },
+    {
+      "id": "case_012",
+      "query": "跨年",
+      "target": "2025/2026 跨年晚会安排",
+      "target_rank": 1,
+      "comment": "测试中文关键词匹配，应该精确匹配到唯一文档"
+    },
+    {
+      "id": "case_013",
+      "query": "agentic review",
+      "target": "Agentic Retrieval Review weekly",
+      "target_rank": 1,
+      "comment": "测试部分词匹配，提取关键词进行匹配"
+    },
+    {
+      "id": "case_014",
+      "query": "AIWC",
+      "target": "AIWC Progress tracking",
+      "target_rank": 1,
+      "comment": "测试全大写缩写匹配"
+    },
+    {
+      "id": "case_015",
+      "query": "oracle cooperation",
+      "target": "XCompany & Oracle's cooperation announcement",
+      "target_rank": 1,
+      "comment": "测试关键词组合匹配，应该能定位到合作公告"
+    },
+    {
+      "id": "case_016",
+      "query": "a b test",
+      "target": "A/B Test Q&A",
+      "target_rank": 1,
+      "comment": "测试斜杠分隔的词匹配，A/B应该能匹配a b"
+    },
+    {
+      "id": "case_017",
+      "query": "mars",
+      "target": "Mars 特工队",
+      "target_rank": 1,
+      "comment": "测试英文关键词匹配中英文混合标题"
+    },
+    {
+      "id": "case_018",
+      "query": "devops common",
+      "target": "XP/XCX Devops (Common)",
+      "target_rank": 1,
+      "comment": "测试括号内关键词匹配"
+    },
+    {
+      "id": "case_019",
+      "query": "frontends sharing",
+      "target": "✨HZ: Frontends Sharing✨",
+      "target_rank": 1,
+      "comment": "测试多emoji和冒号的处理"
+    },
+    {
+      "id": "case_020",
+      "query": "overview",
+      "target": "🧭 Overview",
+      "target_rank": 1,
+      "comment": "测试纯英文单词加emoji的匹配"
+    },
+    {
+      "id": "case_021",
+      "query": "20251009",
+      "target": "20251009",
+      "target_rank": 1,
+      "comment": "测试纯数字标题的精确匹配"
+    },
+    {
+      "id": "case_022",
+      "query": "2025 1009",
+      "target": ["20251009", "２０２５１００９"],
+      "target_rank": "<=2",
+      "comment": "测试数字分词匹配，应该能匹配半角和全角数字版本"
+    },
+    {
+      "id": "case_023",
+      "query": "wfm workforce",
+      "target": "Workforce Management WFM (XCX)",
+      "target_rank": 1,
+      "comment": "测试缩写和全称同时匹配"
+    },
+    {
+      "id": "case_024",
+      "query": "genai science",
+      "target": "GenAI R&D Science",
+      "target_rank": 1,
+      "comment": "测试GenAI缩写匹配和R&D符号处理"
+    },
+    {
+      "id": "case_025",
+      "query": "anti spam phishing",
+      "target": "TNS & Xmail Anti-Spam Phishing Project",
+      "target_rank": 1,
+      "comment": "测试连字符分隔的词匹配"
+    },
+    {
+      "id": "case_026",
+      "query": "research development guide",
+      "target": "ResearchAndDevelopmentGuide",
+      "target_rank": 1,
+      "comment": "测试驼峰命名匹配，应该能分词匹配"
+    },
+    {
+      "id": "case_027",
+      "query": "beautiful",
+      "target": "Beautiful color",
+      "target_rank": 1,
+      "comment": "测试部分词前缀匹配"
+    },
+    {
+      "id": "case_028",
+      "query": "rag feature",
+      "target": "{RAG}feature merged",
+      "target_rank": 1,
+      "comment": "测试花括号包裹的关键词匹配"
+    },
+    {
+      "id": "case_029",
+      "query": "rag latency",
+      "target": "RAG Latency Discussion [XCalendar]",
+      "target_rank": 1,
+      "comment": "测试方括号内容被忽略的情况"
+    },
+    {
+      "id": "case_030",
+      "query": "nano",
+      "target": "Nano documents",
+      "target_rank": 1,
+      "comment": "测试简短关键词匹配"
+    },
+    {
+      "id": "case_031",
+      "query": "my doc",
+      "target": "MyDoc",
+      "target_rank": 1,
+      "comment": "测试空格匹配驼峰命名"
+    },
+    {
+      "id": "case_032",
+      "query": "test document",
+      "target": "Test doc",
+      "target_rank": 1,
+      "comment": "测试缩写doc匹配完整词document"
+    },
+    {
+      "id": "case_033",
+      "query": "用闲置",
+      "target": "用・闲置广场",
+      "target_rank": 1,
+      "comment": "测试日文中点分隔符的处理"
+    },
+    {
+      "id": "case_034",
+      "query": "web tech design",
+      "target": "PBX Web Tech Design Space",
+      "target_rank": 1,
+      "comment": "测试多词连续匹配"
+    },
+    {
+      "id": "case_035",
+      "query": "win common ui",
+      "target": "Win Common&UI",
+      "target_rank": 1,
+      "comment": "测试&符号连接的词组匹配"
+    },
+    {
+      "id": "case_036",
+      "query": "xcompany oracle",
+      "target": "XCompany & Oracle's cooperation announcement",
+      "target_rank": 1,
+      "comment": "测试公司名称组合搜索"
+    },
+    {
+      "id": "case_037",
+      "query": "sdk",
+      "target": "XCompanyhone-SDK",
+      "target_rank": 1,
+      "comment": "测试全大写缩写匹配连字符后的词"
+    },
+    {
+      "id": "case_038",
+      "query": "书籍",
+      "target": "书籍目录",
+      "target_rank": 1,
+      "comment": "测试纯中文关键词匹配"
+    },
+    {
+      "id": "case_039",
+      "query": "christmas holiday",
+      "target": "XCompany 2025 圣诞放假通知",
+      "target_rank": "",
+      "comment": "负向测试：英文christmas不应该匹配中文圣诞（除非有翻译功能）"
+    },
+    {
+      "id": "case_040",
+      "query": "node js",
+      "target": "Node",
+      "target_rank": 1,
+      "comment": "测试部分匹配，Node应该能匹配到，即使没有js"
+    },
+    {
+      "id": "case_041",
+      "query": "oc cc company",
+      "target": "OC&CC company introduction",
+      "target_rank": 1,
+      "comment": "测试缩写组合和&符号处理"
+    },
+    {
+      "id": "case_042",
+      "query": "gpu infrastructure",
+      "target": "AIC+/CAIC GPU infrastructure rollout",
+      "target_rank": 1,
+      "comment": "测试包含加号和斜杠的复杂标题匹配"
+    },
+    {
+      "id": "case_043",
+      "query": "execution",
+      "target": "📈 PM Execution Hub",
+      "target_rank": 1,
+      "comment": "测试单个关键词在emoji后的匹配"
+    },
+    {
+      "id": "case_044",
+      "query": "summary",
+      "target": "My Summary",
+      "target_rank": 1,
+      "comment": "测试简单的词组匹配"
+    },
+    {
+      "id": "case_045",
+      "query": "lttgw",
+      "target": "LTTGW",
+      "target_rank": 1,
+      "comment": "测试全大写缩写的精确匹配"
+    },
+    {
+      "id": "case_046",
+      "query": "xp xcx",
+      "target": "XP/XCX Devops (Common)",
+      "target_rank": 1,
+      "comment": "测试斜杠分隔的缩写匹配"
+    },
+    {
+      "id": "case_047",
+      "query": "tns xmail",
+      "target": "TNS & Xmail Anti-Spam Phishing Project",
+      "target_rank": 1,
+      "comment": "测试&连接的两个项目名称匹配"
+    },
+    {
+      "id": "case_048",
+      "query": "rag",
+      "target": ["[RAG] Query Cases&Evaluation", "【RAG】bug fix/[RAG] bug fix", "{RAG}feature merged", "RAG Latency Discussion [XCalendar]"],
+      "target_rank": "<=5",
+      "comment": "测试单个热门关键词应该返回多个相关文档，所有RAG相关文档都应该在前5"
+    },
+    {
+      "id": "case_049",
+      "query": "xcompany",
+      "target": ["XCompany 2025 圣诞放假通知", "XCompany & Oracle's cooperation announcement", "XCompany ｎｅｗ ａｉ ｐｌａｔｆｏｒｍ", "XCompany's product"],
+      "target_rank": "<=5",
+      "comment": "测试公司名称应该返回所有相关文档"
+    },
+    {
+      "id": "case_050",
+      "query": "2025",
+      "target": ["XCompany 2025 圣诞放假通知", "2025/2026 跨年晚会安排"],
+      "target_rank": "<=3",
+      "comment": "测试年份数字匹配，应该返回所有包含2025的文档"
+    }
+  ],
+  "metadata": {
+    "total_cases": 50,
+    "categories": {
+      "case_insensitive": ["case_001", "case_002", "case_009", "case_010"],
+      "special_characters": ["case_002", "case_004", "case_007", "case_016", "case_025", "case_033", "case_035"],
+      "chinese_matching": ["case_003", "case_012", "case_017", "case_038"],
+      "emoji_handling": ["case_009", "case_019", "case_020", "case_043"],
+      "fullwidth_chars": ["case_005", "case_022"],
+      "multi_word": ["case_004", "case_006", "case_015", "case_034"],
+      "abbreviations": ["case_014", "case_023", "case_024", "case_045"],
+      "camelCase": ["case_026", "case_031"],
+      "punctuation": ["case_008", "case_010", "case_036"],
+      "numbers": ["case_021", "case_022", "case_050"],
+      "negative_test": ["case_039"],
+      "multi_target": ["case_022", "case_048", "case_049", "case_050"]
+    },
+    "description": "全面的模糊搜索测试用例集，覆盖大小写、特殊字符、中英文、emoji、全角字符、缩写、驼峰命名等各种场景"
+  }
+}

@@ -9,6 +9,7 @@ dependencies = [
     "elasticsearch>=9.2.0",
     "pandas>=2.3.3",
     "requests>=2.32.5",
+    "sentence-transformers>=5.1.2",
     "tqdm>=4.67.1",
 ]
 
