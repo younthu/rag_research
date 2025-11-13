@@ -228,15 +228,16 @@ def evaluate_test_cases(searcher: SemanticTitleSearch, test_cases: List[Dict], t
         "results": results
     }
 
-
-def generate_report(evaluation_results: Dict, output_file: str = None):
+def generate_report(evaluation_results: Dict, output_file: str = None, html_output: str = None):
     """
     生成评估报告
     
     Args:
         evaluation_results: 评估结果
-        output_file: 输出文件路径（可选）
+        output_file: 文本报告输出文件路径（可选）
+        html_output: HTML报告输出文件路径（可选）
     """
+    # 生成文本报告
     report = []
     report.append("=" * 80)
     report.append("SEMANTIC SEARCH EVALUATION REPORT")
@@ -284,6 +285,7 @@ def generate_report(evaluation_results: Dict, output_file: str = None):
     report_text = "\n".join(report)
     print(report_text)
     
+    # 保存文本报告
     if output_file:
         with open(output_file, 'w', encoding='utf-8') as f:
             f.write(report_text)
@@ -292,15 +294,104 @@ def generate_report(evaluation_results: Dict, output_file: str = None):
             f.write("DETAILED RESULTS (JSON)\n")
             f.write("=" * 80 + "\n")
             f.write(json.dumps(evaluation_results, ensure_ascii=False, indent=2))
-        print(f"\nFull report saved to: {output_file}")
+        print(f"\nText report saved to: {output_file}")
+    
+    # 生成HTML报告
+    if html_output:
+        generate_html_report(evaluation_results, html_output)
 
+
+def generate_html_report(evaluation_results: Dict, output_file: str):
+    """
+    生成HTML格式的评估报告
+    
+    Args:
+        evaluation_results: 评估结果
+        output_file: HTML输出文件路径
+    """
+    import os
+    
+    # 读取HTML模板
+    template_path = os.path.join(os.path.dirname(__file__), 'report_template.html')
+    try:
+        with open(template_path, 'r', encoding='utf-8') as f:
+            template = f.read()
+    except FileNotFoundError:
+        print(f"Error: Template file not found at {template_path}")
+        return
+    
+    # 生成表格行
+    table_rows = []
+    for result in evaluation_results['results']:
+        status = result['status']
+        status_class = 'pass' if '✓' in status else 'fail'
+        
+        # 处理target显示（可能是字符串或列表）
+        target = result['target']
+        if isinstance(target, list):
+            target_display = ', '.join(target)
+        else:
+            target_display = target
+        
+        # 处理actual result
+        rank_info = result['rank_info']
+        if isinstance(rank_info, list):
+            if any('Not found' in info for info in rank_info):
+                actual_result = f'<span class="status-fail">Not found in top 10</span>'
+            elif len(rank_info) > 1:
+                # 多个目标
+                actual_result = '<br>'.join(rank_info)
+            else:
+                actual_result = rank_info[0]
+        else:
+            actual_result = str(rank_info)
+        
+        # 提取分数信息
+        if 'Rank' in str(rank_info) and 'score:' in str(rank_info):
+            actual_result = actual_result.replace('score:', '<span class="score">')
+            if actual_result.count('(') > 0:
+                actual_result = actual_result.replace(')', ')</span>')
+        
+        # 生成Top 5结果列表
+        top_results_html = '<ol>'
+        for title, score in result['top_results']:
+            top_results_html += f'<li>{title} ({score})</li>'
+        top_results_html += '</ol>'
+        
+        # 生成行HTML
+        row_html = f'''
+            <tr data-status="{status_class}">
+                <td>{result['case_id']}</td>
+                <td class="status-{status_class}">{status}</td>
+                <td class="query-cell">{result['query']}</td>
+                <td class="target-cell">{target_display}</td>
+                <td>{result['expected_rank']}</td>
+                <td>{actual_result}</td>
+                <td class="top-results">{top_results_html}</td>
+                <td class="comment-cell">{result['comment']}</td>
+            </tr>'''
+        table_rows.append(row_html)
+    
+    # 替换模板中的占位符
+    html_content = template.replace('{{TOTAL_CASES}}', str(evaluation_results['total']))
+    html_content = html_content.replace('{{PASSED_CASES}}', str(evaluation_results['passed']))
+    html_content = html_content.replace('{{FAILED_CASES}}', str(evaluation_results['failed']))
+    html_content = html_content.replace('{{PASS_RATE}}', f"{evaluation_results['pass_rate']:.2f}")
+    html_content = html_content.replace('{{TABLE_ROWS}}', '\n'.join(table_rows))
+    
+    # 保存HTML文件
+    with open(output_file, 'w', encoding='utf-8') as f:
+        f.write(html_content)
+    
+    print(f"HTML report saved to: {output_file}")
 
 def main():
     """主函数"""
     # 文件路径
-    titles_file = "/storage/rag_research/title_search/titles.json"
-    test_cases_file = "/storage/rag_research/title_search/test_cases.json"
-    report_file = "/storage/rag_research/title_search/evaluation_report.txt"
+    titles_file = "./title_search/titles.json"
+    test_cases_file = "./title_search/test_cases.json"
+    report_file = "./title_search/evaluation_report.txt"
+    html_report_file = "./title_search/evaluation_report.html"  # 新增
     
     # 加载数据
     print("Loading data...")
@@ -309,17 +400,16 @@ def main():
     print(f"Loaded {len(titles)} titles and {len(test_cases)} test cases")
     
     # 初始化搜索器
+    print("\nInitializing semantic search...")
     searcher = SemanticTitleSearch()
-    
-    # 构建索引
     searcher.build_index(titles)
     
-    # 评估测试用例
-    evaluation_results = evaluate_test_cases(searcher, test_cases, top_k=10)
+    # 运行评估
+    print("\nRunning evaluation...")
+    evaluation_results = evaluate_test_cases(searcher, test_cases)
     
-    # 生成报告
-    generate_report(evaluation_results, report_file)
-
+    # 生成报告（包括文本和HTML）
+    generate_report(evaluation_results, report_file, html_report_file)
 
 if __name__ == "__main__":
     main()
