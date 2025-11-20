@@ -2,3 +2,4 @@ id_rsa_rag_research*
 pull.sh
 push.sh
 downloads/
+notebooks/.ipynb_checkpoints/

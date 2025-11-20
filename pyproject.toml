@@ -5,14 +5,23 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    "click>=8.3.1",
     "datasets>=4.4.0",
     "elasticsearch>=9.2.0",
     "faiss-cpu>=1.12.0",
     "numpy>=2.3.4",
     "pandas>=2.3.3",
+    "pymilvus>=2.6.3",
     "requests>=2.32.5",
     "sentence-transformers>=5.1.2",
+    "taskipy>=1.14.1",
+    "tiktoken>=0.12.0",
     "tqdm>=4.67.1",
+]
+
+[dependency-groups]
+dev = [
+    "jupyterlab>=4.5.0",
 ]
 
 [project.scripts]
