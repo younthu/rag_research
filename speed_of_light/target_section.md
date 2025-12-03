@@ -1,0 +1,2 @@
+# The Speed of Light
+Light travels at approximately 299,792 kilometers per second (186,282 miles per second) in a vacuum. To put this into perspective, light from the Sun takes just over eight minutes to reach Earth. This incredible speed makes light the fastest thing in the universe and serves as a fundamental constant in physics.
