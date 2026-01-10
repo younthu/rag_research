@@ -331,6 +331,218 @@ def miracl_qrels(context: AssetExecutionContext, config: MiraclConfig) -> dict[s
 
 
 @asset(
+    deps=[miracl_qrels],
+    description="Extract unique base docids from MIRACL qrels",
+    group_name="miracl",
+)
+def miracl_unique_docids(context: AssetExecutionContext, config: MiraclConfig) -> dict[str, Any]:
+    """Extract all unique base docids from qrels file.
+    
+    The docid format in qrels is: {base_docid}#{paragraph_id}
+    This asset extracts unique base docids (the part before #).
+    
+    For example:
+    - "6007#26" -> base_docid is "6007"
+    - "14224#35" -> base_docid is "14224"
+    
+    Returns:
+        Dict containing unique docid metadata and file path.
+    """
+    qrels_path = Path(config.output_dir) / config.language / "qrels" / f"qrels_{config.split}.jsonl"
+    
+    if not qrels_path.exists():
+        raise FileNotFoundError(f"Qrels file not found: {qrels_path}. Run miracl_qrels first.")
+    
+    context.log.info(f"Extracting unique docids from {qrels_path}")
+    
+    unique_docids: set[str] = set()
+    total_entries = 0
+    
+    with open(qrels_path, "r", encoding="utf-8") as f:
+        for line in f:
+            qrel = json.loads(line)
+            docid = qrel["docid"]
+            
+            # Extract base_docid (part before #)
+            if "#" in docid:
+                base_docid = docid.split("#")[0]
+            else:
+                base_docid = docid
+            
+            unique_docids.add(base_docid)
+            total_entries += 1
+    
+    context.log.info(f"Processed {total_entries} qrel entries")
+    context.log.info(f"Found {len(unique_docids)} unique base docids")
+    
+    # Save unique docids to file
+    output_path = Path(config.output_dir) / config.language / "qrels"
+    output_path.mkdir(parents=True, exist_ok=True)
+    
+    docids_file = output_path / f"unique_docids_{config.split}.json"
+    sorted_docids = sorted(unique_docids, key=lambda x: int(x) if x.isdigit() else x)
+    
+    with open(docids_file, "w", encoding="utf-8") as f:
+        json.dump({
+            "unique_docid_count": len(unique_docids),
+            "docids": sorted_docids,
+        }, f, ensure_ascii=False, indent=2)
+    
+    context.log.info(f"Saved unique docids to {docids_file}")
+    
+    return {
+        "language": config.language,
+        "split": config.split,
+        "total_qrel_entries": total_entries,
+        "unique_docid_count": len(unique_docids),
+        "docids_path": str(docids_file),
+    }
+
+
+@asset(
+    deps=[miracl_unique_docids, miracl_corpus],
+    description="Extract corpus documents that match unique docids from qrels and save as markdown",
+    group_name="miracl",
+)
+def miracl_filtered_corpus(context: AssetExecutionContext, config: MiraclConfig) -> dict[str, Any]:
+    """Extract only documents from corpus that have matching docids in qrels.
+    
+    This asset filters the full corpus to include only documents whose base_docid
+    appears in the unique docids extracted from qrels. Each document is saved as
+    a markdown file with:
+    - Title as H1 header
+    - Paragraphs joined by two newlines
+    
+    Returns:
+        Dict containing filtered corpus metadata and output directory path.
+    """
+    # Load unique docids
+    docids_path = Path(config.output_dir) / config.language / "qrels" / f"unique_docids_{config.split}.json"
+    
+    if not docids_path.exists():
+        raise FileNotFoundError(f"Unique docids file not found: {docids_path}. Run miracl_unique_docids first.")
+    
+    with open(docids_path, "r", encoding="utf-8") as f:
+        docids_data = json.load(f)
+    
+    unique_docids = set(docids_data["docids"])
+    context.log.info(f"Loaded {len(unique_docids)} unique docids to filter")
+    
+    # Load and filter corpus
+    corpus_path = Path(config.output_dir) / config.language / "corpus" / "corpus.jsonl"
+    
+    if not corpus_path.exists():
+        raise FileNotFoundError(f"Corpus file not found: {corpus_path}. Run miracl_corpus first.")
+    
+    context.log.info(f"Filtering corpus from {corpus_path}")
+    
+    # First pass: collect paragraphs for matching documents
+    # Format: {base_docid: {"title": str, "paragraphs": [(paragraph_id, text), ...]}}
+    docs_by_id: dict[str, dict] = {}
+    total_paragraphs = 0
+    filtered_paragraphs = 0
+    
+    with open(corpus_path, "r", encoding="utf-8") as f:
+        for line in f:
+            total_paragraphs += 1
+            doc = json.loads(line)
+            docid = doc["docid"]
+            title = doc.get("title", "")
+            text = doc.get("text", "")
+            
+            # Parse docid: base_docid#paragraph_id
+            if "#" in docid:
+                base_docid, para_id = docid.rsplit("#", 1)
+                try:
+                    para_id = int(para_id)
+                except ValueError:
+                    para_id = 0
+            else:
+                base_docid = docid
+                para_id = 0
+            
+            # Only keep documents whose base_docid is in unique_docids
+            if base_docid in unique_docids:
+                if base_docid not in docs_by_id:
+                    docs_by_id[base_docid] = {"title": title, "paragraphs": []}
+                
+                docs_by_id[base_docid]["paragraphs"].append((para_id, text))
+                filtered_paragraphs += 1
+            
+            if total_paragraphs % 100000 == 0:
+                context.log.info(f"Processed {total_paragraphs} paragraphs, kept {filtered_paragraphs}...")
+    
+    context.log.info(f"Filtered {filtered_paragraphs} paragraphs from {total_paragraphs} total")
+    context.log.info(f"Found {len(docs_by_id)} unique documents to write")
+    
+    # Output path for filtered markdown files
+    md_output_dir = Path(config.output_dir) / config.language / "filtered_corpus" / config.split
+    md_output_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Write each document as a markdown file
+    doc_count = 0
+    doc_index = {}  # Map base_docid to markdown file path
+    
+    for base_docid, doc_data in docs_by_id.items():
+        title = doc_data["title"]
+        paragraphs = doc_data["paragraphs"]
+        
+        # Sort paragraphs by paragraph_id
+        paragraphs.sort(key=lambda x: x[0])
+        
+        # Join paragraphs with two newlines
+        paragraph_texts = [p[1] for p in paragraphs]
+        combined_text = "\n\n".join(paragraph_texts)
+        
+        # Create markdown content: title as H1, then all paragraphs
+        md_content = f"# {title}\n\n{combined_text}\n"
+        
+        # Use base_docid as filename (sanitize for filesystem)
+        safe_docid = base_docid.replace("/", "_").replace("\\", "_")
+        md_file = md_output_dir / f"{safe_docid}.md"
+        
+        with open(md_file, "w", encoding="utf-8") as mf:
+            mf.write(md_content)
+        
+        doc_index[base_docid] = str(md_file)
+        doc_count += 1
+        
+        if doc_count % 1000 == 0:
+            context.log.info(f"Wrote {doc_count} markdown files...")
+    
+    # Save document index
+    index_file = md_output_dir / "doc_index.json"
+    with open(index_file, "w", encoding="utf-8") as f:
+        json.dump(doc_index, f, ensure_ascii=False, indent=2)
+    
+    context.log.info(f"Wrote {doc_count} markdown files to {md_output_dir}")
+    context.log.info(f"Document index saved to {index_file}")
+    
+    # Check for missing docids
+    matched_docids = set(docs_by_id.keys())
+    missing_docids = unique_docids - matched_docids
+    if missing_docids:
+        context.log.warning(f"Warning: {len(missing_docids)} docids from qrels not found in corpus")
+        # Save missing docids for reference
+        missing_file = md_output_dir / "missing_docids.json"
+        with open(missing_file, "w", encoding="utf-8") as f:
+            json.dump(sorted(list(missing_docids)), f, ensure_ascii=False, indent=2)
+        context.log.info(f"Missing docids saved to {missing_file}")
+    
+    return {
+        "language": config.language,
+        "split": config.split,
+        "total_corpus_paragraphs": total_paragraphs,
+        "filtered_paragraphs": filtered_paragraphs,
+        "document_count": doc_count,
+        "matched_docid_count": len(matched_docids),
+        "missing_docid_count": len(missing_docids),
+        "markdown_dir": str(md_output_dir),
+        "index_path": str(index_file),
+    }
+
+
+@asset(
     deps=[miracl_corpus],
     description="Convert MIRACL corpus documents to markdown files",
     group_name="miracl",
@@ -338,9 +550,13 @@ def miracl_qrels(context: AssetExecutionContext, config: MiraclConfig) -> dict[s
 def miracl_markdown_docs(context: AssetExecutionContext, config: MiraclConfig) -> dict[str, Any]:
     """Convert MIRACL documents to individual markdown files.
     
+    Documents in corpus have docid format: {base_docid}#{paragraph_id}
+    This function groups paragraphs by base_docid and concatenates them into
+    a single markdown file per document.
+    
     Each document is saved as a separate markdown file with:
-    - Filename: {docid}.md
-    - Content: Title as H1, followed by document text
+    - Filename: {base_docid}.md
+    - Content: Title as H1, followed by all paragraphs separated by blank lines
     
     Returns:
         Dict containing markdown output metadata.
@@ -357,8 +573,10 @@ def miracl_markdown_docs(context: AssetExecutionContext, config: MiraclConfig) -
     
     context.log.info(f"Converting documents to markdown in {md_output_dir}")
     
-    doc_count = 0
-    doc_index = {}  # Map docid to markdown file path
+    # Group paragraphs by base docid
+    # Format: {base_docid: {"title": str, "paragraphs": [(paragraph_id, text), ...]}}
+    docs_by_id: dict[str, dict] = {}
+    paragraph_count = 0
     
     with open(corpus_path, "r", encoding="utf-8") as f:
         for line in f:
@@ -367,21 +585,58 @@ def miracl_markdown_docs(context: AssetExecutionContext, config: MiraclConfig) -
             title = doc.get("title", "")
             text = doc.get("text", "")
             
-            # Create markdown content
-            md_content = f"# {title}\n\n{text}\n"
+            # Parse docid: base_docid#paragraph_id
+            if "#" in docid:
+                base_docid, para_id = docid.rsplit("#", 1)
+                try:
+                    para_id = int(para_id)
+                except ValueError:
+                    para_id = 0
+            else:
+                base_docid = docid
+                para_id = 0
             
-            # Use docid as filename (sanitize for filesystem)
-            safe_docid = docid.replace("/", "_").replace("\\", "_")
-            md_file = md_output_dir / f"{safe_docid}.md"
+            if base_docid not in docs_by_id:
+                docs_by_id[base_docid] = {"title": title, "paragraphs": []}
             
-            with open(md_file, "w", encoding="utf-8") as mf:
-                mf.write(md_content)
+            docs_by_id[base_docid]["paragraphs"].append((para_id, text))
+            paragraph_count += 1
             
-            doc_index[docid] = str(md_file)
-            doc_count += 1
-            
-            if doc_count % 10000 == 0:
-                context.log.info(f"Converted {doc_count} documents...")
+            if paragraph_count % 10000 == 0:
+                context.log.info(f"Processed {paragraph_count} paragraphs...")
+    
+    context.log.info(f"Grouped {paragraph_count} paragraphs into {len(docs_by_id)} documents")
+    
+    # Write each document as a single markdown file
+    doc_count = 0
+    doc_index = {}  # Map base_docid to markdown file path
+    
+    for base_docid, doc_data in docs_by_id.items():
+        title = doc_data["title"]
+        paragraphs = doc_data["paragraphs"]
+        
+        # Sort paragraphs by paragraph_id
+        paragraphs.sort(key=lambda x: x[0])
+        
+        # Concatenate paragraphs with double newline
+        paragraph_texts = [p[1] for p in paragraphs]
+        combined_text = "\n\n".join(paragraph_texts)
+        
+        # Create markdown content: title as H1, then all paragraphs
+        md_content = f"# {title}\n\n{combined_text}\n"
+        
+        # Use base_docid as filename (sanitize for filesystem)
+        safe_docid = base_docid.replace("/", "_").replace("\\", "_")
+        md_file = md_output_dir / f"{safe_docid}.md"
+        
+        with open(md_file, "w", encoding="utf-8") as mf:
+            mf.write(md_content)
+        
+        doc_index[base_docid] = str(md_file)
+        doc_count += 1
+        
+        if doc_count % 10000 == 0:
+            context.log.info(f"Wrote {doc_count} markdown files...")
     
     # Save document index
     index_file = md_output_dir / "doc_index.json"
@@ -394,6 +649,7 @@ def miracl_markdown_docs(context: AssetExecutionContext, config: MiraclConfig) -
     return {
         "language": config.language,
         "document_count": doc_count,
+        "paragraph_count": paragraph_count,
         "markdown_dir": str(md_output_dir),
         "index_path": str(index_file),
     }
