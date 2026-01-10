@@ -482,6 +482,7 @@ def miracl_filtered_corpus(context: AssetExecutionContext, config: MiraclConfig)
     # Write each document as a markdown file
     doc_count = 0
     doc_index = {}  # Map base_docid to markdown file path
+    used_filenames: set[str] = set()  # Track used filenames to avoid collision
     
     for base_docid, doc_data in docs_by_id.items():
         title = doc_data["title"]
@@ -497,9 +498,23 @@ def miracl_filtered_corpus(context: AssetExecutionContext, config: MiraclConfig)
         # Create markdown content: title as H1, then all paragraphs
         md_content = f"# {title}\n\n{combined_text}\n"
         
-        # Use base_docid as filename (sanitize for filesystem)
-        safe_docid = base_docid.replace("/", "_").replace("\\", "_")
-        md_file = md_output_dir / f"{safe_docid}.md"
+        # Use title as filename (sanitize for filesystem)
+        # Remove or replace characters that are invalid in filenames
+        safe_title = title.replace("/", "_").replace("\\", "_").replace(":", "_")
+        safe_title = safe_title.replace("*", "_").replace("?", "_").replace('"', "_")
+        safe_title = safe_title.replace("<", "_").replace(">", "_").replace("|", "_")
+        safe_title = safe_title.strip()
+        
+        # Handle empty title
+        if not safe_title:
+            safe_title = f"untitled_{base_docid}"
+        
+        # Handle filename collision by appending docid
+        if safe_title in used_filenames:
+            safe_title = f"{safe_title}_{base_docid}"
+        
+        used_filenames.add(safe_title)
+        md_file = md_output_dir / f"{safe_title}.md"
         
         with open(md_file, "w", encoding="utf-8") as mf:
             mf.write(md_content)
