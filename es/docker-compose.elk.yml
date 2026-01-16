@@ -2,7 +2,10 @@ version: '3.8'
 
 services:
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:9.2.0
+    build:
+      context: ./elasticsearch
+      dockerfile: Dockerfile
+    image: elasticsearch-with-icu:9.2.0
     container_name: elasticsearch
     environment:
       - node.name=es01
@@ -59,5 +62,6 @@ networks:
 
 # Notes:
 # - This compose file runs a single-node Elasticsearch for local development and disables security (xpack) for convenience.
-# - Change the image tags (8.9.0) to a different version as desired. If you want to enable security (recommended for prod), follow
-#   official Elasticsearch 8.x docs to configure passwords/TLS and update Kibana/Logstash accordingly.
+# - Elasticsearch is built from ./elasticsearch/Dockerfile which installs the analysis-icu plugin for CJK tokenization.
+# - Change the image tags (9.2.0) to a different version as desired. If you want to enable security (recommended for prod), follow
+#   official Elasticsearch 8.x/9.x docs to configure passwords/TLS and update Kibana/Logstash accordingly.

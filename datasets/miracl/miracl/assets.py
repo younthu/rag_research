@@ -24,7 +24,7 @@ class MiraclConfig(Config):
 
     language: str = "zh"  # MIRACL supports: ar, bn, de, en, es, fa, fi, fr, hi, id, ja, ko, ru, sw, te, th, vi, yo, zh
     split: str = "dev"  # train or dev
-    output_dir: str = "miracl_output"
+    output_dir: str = "output/miracl"
 
 
 def _download_parquet_files(repo_id: str, config_name: str, split: str, cache_dir: Path) -> list[Path]:
@@ -804,7 +804,7 @@ def miracl_rag_eval_dataset(context: AssetExecutionContext, config: MiraclConfig
 class EnronConfig(Config):
     """Configuration for Enron email dataset assets."""
 
-    output_dir: str = "enron_output"
+    output_dir: str = "output/enron"
     # CMU Enron email dataset URL
     dataset_url: str = "http://www.cs.cmu.edu/~enron/enron_mail_20150507.tar.gz"
     max_emails: int = 0  # 0 means no limit
@@ -1198,7 +1198,7 @@ class MiraclConfigEn(Config):
 
     language: str = "en"
     split: str = "dev"  # train or dev
-    output_dir: str = "miracl_output"
+    output_dir: str = "output/miracl"
 
 
 @asset(
@@ -1759,7 +1759,7 @@ def miracl_rag_eval_dataset_en(context: AssetExecutionContext, config: MiraclCon
 class EnronConfig(Config):
     """Configuration for Enron email dataset assets."""
 
-    output_dir: str = "enron_output"
+    output_dir: str = "output/enron"
     # CMU Enron email dataset URL
     dataset_url: str = "http://www.cs.cmu.edu/~enron/enron_mail_20150507.tar.gz"
     max_emails: int = 0  # 0 means no limit

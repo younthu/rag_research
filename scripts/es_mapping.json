@@ -9,6 +9,13 @@
               "\u2018=>'",
               "\u201B=>'"
           ]
+        },
+        "protect_terms": {
+          "type": "mapping",
+          "mappings": [
+            "ai => _ai_",
+            "AI => _ai_"
+          ]
         }
       },
       "tokenizer": {
@@ -24,6 +31,18 @@
           "tokenizer": "icu_tokenizer",
           "filter": ["lowercase", "icu_folding"]
         },
+        "rag_analyzer": {
+          "char_filter": ["protect_terms"],
+          "filter": [
+            "cjk_width",
+            "lowercase",
+            "english_possessive_stemmer",
+            "multi_language_stopwords",
+            "stemmer"
+          ],
+          "tokenizer": "icu_tokenizer",
+          "type": "custom"
+        },
         "title_apostrophe_analyzer": {
           "type": "custom",
           "char_filter": ["normalize_apostrophe"],
@@ -35,7 +54,39 @@
           "tokenizer": "ngram_tokenizer",
           "filter": ["lowercase"]
         }
-      }
+      },
+      "filter": {
+          "50_char_trunc": {
+            "length": "50",
+            "type": "truncate"
+          },
+          "keep_terms": {
+            "type": "keep",
+            "keep_words": ["ai", "ml", "llm"]
+          },
+          "english_possessive_stemmer": {
+            "language": "possessive_english",
+            "type": "stemmer"
+          },
+          "multi_language_stopwords": {
+            "stopwords": [
+              "_english_",
+              "_cjk_",
+              "_brazilian_",
+              "_danish_",
+              "_dutch_",
+              "_french_",
+              "_german_",
+              "_italian_",
+              "_portuguese_",
+              "_romanian_",
+              "_russian_",
+              "_spanish_",
+              "_turkish_"
+            ],
+            "type": "stop"
+          }
+        }
     }
   },
   "mappings": {
@@ -45,8 +96,11 @@
       "label": { "type": "keyword" },
       "title": {
         "type": "text",
+        "analyzer": "rag_analyzer",
+        "search_analyzer": "rag_analyzer",
         "fields": {
           "cjk": { "type": "text", "analyzer": "title_cjk_analyzer" },
+          "rag": {"type": "text", "analyzer": "rag_analyzer"},
           "apostrophe": { "type": "text", "analyzer": "title_apostrophe_analyzer" },
           "ngram": { "type": "text", "analyzer": "title_cjk_ngram" }
         }

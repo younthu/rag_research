@@ -2,13 +2,13 @@
 """
 ingest_to_es.py
 
-python3 scripts/ingest_to_es.py -i downloads/toutiao_cat_data.txt --index toutiao_news --mapping scripts/es_mapping.json --force-reindex  --es-host http://localhost:9200 --batch 500
+python3 scripts/ingest_toutiao_to_es.py -i datasets/miracl/output/toutiao/cache/toutiao_cat_data.txt --index toutiao_news --mapping scripts/es_mapping.json --force-reindex  --es-host http://localhost:9200 --batch 500
 
-python3 scripts/ingest_to_es.py -i downloads/toutiao_cat_data.txt --index dummy --csv downloads/toutiao_cat_data.csv --limit 1000
+python3 scripts/ingest_toutiao_to_es.py -i datasets/miracl/output/toutiao/cache/toutiao_cat_data.txt --index dummy --csv downloads/toutiao_cat_data.csv --limit 1000
 
 Usage:
-  python3 scripts/ingest_to_es.py \
-    --input downloads/toutiao_cat_data.txt \
+  python3 scripts/ingest_toutiao_to_es.py \
+    --input datasets/miracl/output/toutiao/cache/toutiao_cat_data.txt \
     --index toutiao_news \
     --es-host http://localhost:9200 \
     [--sep "_!_"] [--csv downloads/toutiao_cat_data.csv] [--batch 500]
@@ -91,10 +91,8 @@ def ensure_index(es: Elasticsearch, index: str, mapping_path: str | None = None)
 
     mapping = None
     if mapping_path:
-        # Resolve mapping path relative to this script if not absolute
-        mp = Path(mapping_path)
-        if not mp.is_absolute():
-            mp = Path(__file__).resolve().parent / mapping_path
+        # Resolve mapping path relative to current working directory
+        mp = Path(mapping_path).resolve()
         if mp.exists():
             try:
                 with open(mp, 'r', encoding='utf-8') as f:
