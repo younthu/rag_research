@@ -1,0 +1,6 @@
+.venv/
+.ipynb_checkpoints/
+.git/
+datasets/miracl/.tmp/
+datasets/miracl/.venv/
+datasets/miracl/output/
