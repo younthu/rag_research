@@ -13,6 +13,11 @@ dependencies = [
     "pandas",
     "dagit>=1.12.8",
     "dagster-cli>=0.8.0",
+    "FlagEmbedding",
+    "torch",
+    "transformers",
+    "accelerate",
+    "sentence-transformers",
 ]
 
 [project.optional-dependencies]

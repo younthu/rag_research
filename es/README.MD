@@ -110,3 +110,8 @@ docker compose -f docker-compose.elk.yml logs logstash
 - 添加 Beats（Filebeat/Metricbeat）示例配置并在 Compose 中挂载示例数据目录。
 
 如需我替你自动完成其中任何一项，请直接告诉我：例如“启用 8.x 安全并生成证书”，或“把 JVM 堆改成 2GB 并把 Kibana 暴露在 5601 上”。
+
+
+# 导入数据
+
+1. 导入
